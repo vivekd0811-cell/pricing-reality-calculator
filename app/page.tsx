@@ -218,6 +218,57 @@ export default function Home() {
               2 · Break-even &amp; pricing reality
             </h2>
             <div className="grid gap-3">
+              {/* Founder Reality Check */}
+<div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3">
+  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">
+    Founder Reality Check
+  </p>
+
+  {result.contributionPerClient != null &&
+  result.contributionPerClient <= 0 ? (
+    <>
+      <h3 className="mt-2 text-lg font-semibold text-white">
+        You are losing money on every client.
+      </h3>
+      <p className="mt-2 text-sm text-slate-300">
+        More sales will make the problem worse. Your pricing or delivery costs
+        need to change immediately.
+      </p>
+    </>
+  ) : result.contributionMarginPct != null &&
+    (result.contributionMarginPct < 30 ||
+      (result.breakEvenClients != null && result.breakEvenClients > 20)) ? (
+    <>
+      <h3 className="mt-2 text-lg font-semibold text-white">
+        Your current pricing is likely unsustainable.
+      </h3>
+      <p className="mt-2 text-sm text-slate-300">
+        You need better pricing, lower delivery costs, or both. Right now your
+        model depends on too many clients to stay healthy.
+      </p>
+    </>
+  ) : result.contributionMarginPct != null &&
+    (result.contributionMarginPct < 50 ||
+      (result.breakEvenClients != null && result.breakEvenClients > 10)) ? (
+    <>
+      <h3 className="mt-2 text-lg font-semibold text-white">
+        Your pricing is survivable, but fragile.
+      </h3>
+      <p className="mt-2 text-sm text-slate-300">
+        One bad month or losing a few clients could hurt your business.
+      </p>
+    </>
+  ) : (
+    <>
+      <h3 className="mt-2 text-lg font-semibold text-white">
+        You have a viable pricing model.
+      </h3>
+      <p className="mt-2 text-sm text-slate-300">
+        Your economics look healthy at a quick glance.
+      </p>
+    </>
+  )}
+</div>
               <ResultCard
                 title="Contribution per client"
                 value={
@@ -488,3 +539,4 @@ export default function Home() {
     </main>
   );
 }
+
