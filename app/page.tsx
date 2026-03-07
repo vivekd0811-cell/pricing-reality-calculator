@@ -4,13 +4,44 @@ import { useMemo, useState } from "react";
 import { NumberInput } from "@/components/NumberInput";
 import { ResultCard } from "@/components/ResultCard";
 import { calculate, type CalculatorField } from "@/lib/calc";
-import { formatCurrencyInr, formatNumber, parseNumber } from "@/lib/format";
+import { formatNumber, parseNumber } from "@/lib/format";
+
+type CurrencyCode = "USD" | "EUR" | "GBP" | "INR";
+
+const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
+  { code: "USD", label: "USD ($) — US Dollar" },
+  { code: "EUR", label: "EUR (€) — Euro" },
+  { code: "GBP", label: "GBP (£) — British Pound" },
+  { code: "INR", label: "INR (₹) — Indian Rupee" },
+];
 
 export default function Home() {
-  const [pricePerClient, setPricePerClient] = useState("50000");
-  const [costPerClient, setCostPerClient] = useState("15000");
-  const [fixedCost, setFixedCost] = useState("200000");
-  const [targetProfit, setTargetProfit] = useState("100000");
+  const [currency, setCurrency] = useState<CurrencyCode>("USD");
+
+  const currencySymbol = useMemo(() => {
+    const parts = new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    return parts.find((p) => p.type === "currency")?.value ?? "$";
+  }, [currency]);
+
+  // ✅ No decimals for money values
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.round(value));
+
+  const [pricePerClient, setPricePerClient] = useState("5000");
+  const [costPerClient, setCostPerClient] = useState("1500");
+  const [fixedCost, setFixedCost] = useState("20000");
+  const [targetProfit, setTargetProfit] = useState("10000");
   const [currentClients, setCurrentClients] = useState("10");
 
   const parsedInput = useMemo(
@@ -95,10 +126,31 @@ export default function Home() {
               just to stand still.
             </p>
           </div>
+
           <div className="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-900/10 px-4 py-3 text-xs text-emerald-100/90 sm:mt-0 sm:max-w-xs">
-            <p className="font-medium text-emerald-300">
-              All numbers are monthly and in INR (₹).
-            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-200/80">
+                  Currency
+                </label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                  className="w-full max-w-[240px] rounded-md border border-emerald-500/30 bg-slate-950/60 px-2 py-1 text-xs text-emerald-100 outline-none focus:ring-2 focus:ring-emerald-500/40"
+                >
+                  {CURRENCY_OPTIONS.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="font-medium text-emerald-300">
+                All numbers are monthly and in {currency} ({currencySymbol}).
+              </p>
+            </div>
+
             <p className="mt-1 text-[11px] leading-relaxed text-emerald-100/80">
               This is a quick, opinionated sanity check. It&apos;s not a full
               financial model.
@@ -111,11 +163,12 @@ export default function Home() {
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
               1 · Unit economics inputs
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+
+            <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
               <NumberInput
                 id="price"
-                label="Price per client (₹ / month)"
-                prefix="₹"
+                label="Price per client (/ month)"
+                prefix={currencySymbol}
                 value={pricePerClient}
                 onChange={setPricePerClient}
                 min={0}
@@ -123,10 +176,11 @@ export default function Home() {
                 helperText="What you invoice a typical client every month."
                 error={getFieldError("pricePerClient")}
               />
+
               <NumberInput
                 id="cost"
-                label="Cost to serve one client (₹ / month)"
-                prefix="₹"
+                label="Cost to serve one client (/ month)"
+                prefix={currencySymbol}
                 value={costPerClient}
                 onChange={setCostPerClient}
                 min={0}
@@ -134,18 +188,22 @@ export default function Home() {
                 helperText="All variable delivery costs tied to that client."
                 error={getFieldError("costPerClient")}
               />
-              <NumberInput
-                id="fixed-cost"
-                label="Monthly fixed cost (₹)"
-                prefix="₹"
-                value={fixedCost}
-                onChange={setFixedCost}
-                min={0}
-                required
-                helperText="Salaries, rent, tools, founder pay, etc."
-                error={getFieldError("fixedCost")}
-              />
+
+              <div className="md:col-span-2">
+                <NumberInput
+                  id="fixed-cost"
+                  label="Monthly fixed cost"
+                  prefix={currencySymbol}
+                  value={fixedCost}
+                  onChange={setFixedCost}
+                  min={0}
+                  required
+                  helperText="Salaries, rent, tools, founder pay, etc."
+                  error={getFieldError("fixedCost")}
+                />
+              </div>
             </div>
+
             {result.errors.length === 0 && (
               <p className="text-[11px] text-slate-400">
                 Tip: Play with &ldquo;cost to serve&rdquo; and{" "}
@@ -164,7 +222,7 @@ export default function Home() {
                 title="Contribution per client"
                 value={
                   result.contributionPerClient != null
-                    ? formatCurrencyInr(result.contributionPerClient)
+                    ? formatMoney(result.contributionPerClient)
                     : "—"
                 }
                 subtitle="How much is left from each client after direct delivery costs."
@@ -177,6 +235,7 @@ export default function Home() {
                     : "success"
                 }
               />
+
               <ResultCard
                 title="Gross margin on each client"
                 value={
@@ -197,6 +256,7 @@ export default function Home() {
                     : "success"
                 }
               />
+
               <ResultCard
                 title="Clients to break even"
                 value={
@@ -221,11 +281,12 @@ export default function Home() {
                     : "danger"
                 }
               />
+
               <ResultCard
                 title="Monthly revenue at break-even"
                 value={
                   result.breakEvenRevenue != null
-                    ? formatCurrencyInr(result.breakEvenRevenue)
+                    ? formatMoney(result.breakEvenRevenue)
                     : result.isValid
                     ? "Not reachable with current pricing"
                     : "—"
@@ -255,17 +316,19 @@ export default function Home() {
               </p>
             </div>
           </div>
+
           <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
             <div className="space-y-3">
               <NumberInput
                 id="target-profit"
-                label="Target monthly profit (₹)"
-                prefix="₹"
+                label="Target monthly profit"
+                prefix={currencySymbol}
                 value={targetProfit}
                 onChange={setTargetProfit}
                 min={0}
                 helperText="How much true profit you want to pay founders / reinvest every month."
               />
+
               <NumberInput
                 id="current-clients"
                 label="Current clients (Q)"
@@ -275,6 +338,7 @@ export default function Home() {
                 helperText="How many active, paying clients you realistically want to hold at this pricing."
               />
             </div>
+
             <div className="grid gap-3">
               <ResultCard
                 title="Clients required to earn target profit"
@@ -300,11 +364,12 @@ export default function Home() {
                     : "danger"
                 }
               />
+
               <ResultCard
                 title="Required monthly revenue"
                 value={
                   incomeReality.requiredRevenue != null
-                    ? formatCurrencyInr(incomeReality.requiredRevenue)
+                    ? formatMoney(incomeReality.requiredRevenue)
                     : result.isValid
                     ? "Not reachable with current pricing"
                     : "—"
@@ -318,13 +383,12 @@ export default function Home() {
                     : "neutral"
                 }
               />
+
               <ResultCard
                 title="Required price per client at current Q"
                 value={
                   incomeReality.requiredPriceAtCurrentClients != null
-                    ? formatCurrencyInr(
-                        incomeReality.requiredPriceAtCurrentClients,
-                      )
+                    ? formatMoney(incomeReality.requiredPriceAtCurrentClients)
                     : currentClientsValue == null || currentClientsValue === 0
                     ? "—"
                     : result.isValid
@@ -346,6 +410,45 @@ export default function Home() {
               />
             </div>
           </div>
+        </section>
+
+        {/* ✅ Validation CTA */}
+        <section className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-slate-900/60 p-6 text-center">
+          <h3 className="text-lg font-semibold text-emerald-300">
+            🚀 Want the Founder Pro Version?
+          </h3>
+
+          <p className="mt-2 text-sm text-slate-300">
+            Get the advanced financial model with:
+            <br />
+            • 12-month profit projection
+            <br />
+            • Scenario comparison (3 pricing models)
+            <br />
+            • Churn impact calculator
+            <br />
+            • Founder salary planning
+            <br />
+            • Runway analysis
+          </p>
+
+          
+            
+        <button
+  onClick={() =>
+    window.open(
+      "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform",
+      "_blank"
+    )
+  }
+  className="mt-4 rounded-lg bg-emerald-500 px-6 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
+>
+  Get Pro Version – $29
+</button>
+
+          <p className="mt-2 text-xs text-slate-400">
+            Currently validating interest.
+          </p>
         </section>
 
         <section className="space-y-3 rounded-2xl border border-slate-800/80 bg-slate-900/40 px-4 py-3 text-xs text-slate-200 sm:px-5 sm:py-4">
@@ -385,4 +488,3 @@ export default function Home() {
     </main>
   );
 }
-
