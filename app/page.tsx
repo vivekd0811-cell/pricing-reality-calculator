@@ -28,7 +28,6 @@ export default function Home() {
     return parts.find((p) => p.type === "currency")?.value ?? "$";
   }, [currency]);
 
-  // ✅ No decimals for money values
   const formatMoney = (value: number) =>
     new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -217,58 +216,79 @@ export default function Home() {
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
               2 · Break-even &amp; pricing reality
             </h2>
+
             <div className="grid gap-3">
               {/* Founder Reality Check */}
-<div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3">
-  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">
-    Founder Reality Check
-  </p>
+              <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">
+                  Founder Reality Check
+                </p>
 
-  {result.contributionPerClient != null &&
-  result.contributionPerClient <= 0 ? (
-    <>
-      <h3 className="mt-2 text-lg font-semibold text-white">
-        You are losing money on every client.
-      </h3>
-      <p className="mt-2 text-sm text-slate-300">
-        More sales will make the problem worse. Your pricing or delivery costs
-        need to change immediately.
-      </p>
-    </>
-  ) : result.contributionMarginPct != null &&
-    (result.contributionMarginPct < 30 ||
-      (result.breakEvenClients != null && result.breakEvenClients > 20)) ? (
-    <>
-      <h3 className="mt-2 text-lg font-semibold text-white">
-        Your current pricing is likely unsustainable.
-      </h3>
-      <p className="mt-2 text-sm text-slate-300">
-        You need better pricing, lower delivery costs, or both. Right now your
-        model depends on too many clients to stay healthy.
-      </p>
-    </>
-  ) : result.contributionMarginPct != null &&
-    (result.contributionMarginPct < 50 ||
-      (result.breakEvenClients != null && result.breakEvenClients > 10)) ? (
-    <>
-      <h3 className="mt-2 text-lg font-semibold text-white">
-        Your pricing is survivable, but fragile.
-      </h3>
-      <p className="mt-2 text-sm text-slate-300">
-        One bad month or losing a few clients could hurt your business.
-      </p>
-    </>
-  ) : (
-    <>
-      <h3 className="mt-2 text-lg font-semibold text-white">
-        You have a viable pricing model.
-      </h3>
-      <p className="mt-2 text-sm text-slate-300">
-        Your economics look healthy at a quick glance.
-      </p>
-    </>
-  )}
-</div>
+                {result.contributionPerClient != null &&
+                result.contributionPerClient <= 0 ? (
+                  <>
+                    <h3 className="mt-2 text-lg font-semibold text-white">
+                      You are losing money on every client.
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-300">
+                      More sales will make the problem worse. Your pricing or
+                      delivery costs need to change immediately.
+                    </p>
+                  </>
+                ) : result.contributionMarginPct != null &&
+                  (result.contributionMarginPct < 30 ||
+                    (result.breakEvenClients != null &&
+                      result.breakEvenClients > 20)) ? (
+                  <>
+                    <h3 className="mt-2 text-lg font-semibold text-white">
+                      Your current pricing is likely unsustainable.
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-300">
+                      You need better pricing, lower delivery costs, or both.
+                      Right now your model depends on too many clients to stay
+                      healthy.
+                    </p>
+                  </>
+                ) : result.contributionMarginPct != null &&
+                  (result.contributionMarginPct < 50 ||
+                    (result.breakEvenClients != null &&
+                      result.breakEvenClients > 10)) ? (
+                  <>
+                    <h3 className="mt-2 text-lg font-semibold text-white">
+                      Your pricing is survivable, but fragile.
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-300">
+                      One bad month or losing a few clients could hurt your
+                      business.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="mt-2 text-lg font-semibold text-white">
+                      You have a viable pricing model.
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-300">
+                      Your economics look healthy at a quick glance.
+                    </p>
+                  </>
+                )}
+
+                {result.breakEvenClients != null &&
+                  parsedInput.pricePerClient != null &&
+                  result.contributionPerClient != null &&
+                  result.contributionPerClient > 0 &&
+                  result.breakEvenClients > 1 && (
+                    <p className="mt-3 text-sm text-rose-200/90">
+                      If you charged{" "}
+                      <span className="font-semibold">
+                        {formatMoney(parsedInput.pricePerClient * 1.3)}
+                      </span>{" "}
+                      instead of {formatMoney(parsedInput.pricePerClient)}, you
+                      could reduce the number of clients needed to break even.
+                    </p>
+                  )}
+              </div>
+
               <ResultCard
                 title="Contribution per client"
                 value={
@@ -463,7 +483,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ✅ Validation CTA */}
         <section className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-slate-900/60 p-6 text-center">
           <h3 className="text-lg font-semibold text-emerald-300">
             🚀 Want the Founder Pro Version?
@@ -483,19 +502,17 @@ export default function Home() {
             • Runway analysis
           </p>
 
-          
-            
-        <button
-  onClick={() =>
-    window.open(
-      "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform",
-      "_blank"
-    )
-  }
-  className="mt-4 rounded-lg bg-emerald-500 px-6 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
->
-  Get Pro Version – $29
-</button>
+          <button
+            onClick={() =>
+              window.open(
+                "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform",
+                "_blank",
+              )
+            }
+            className="mt-4 rounded-lg bg-emerald-500 px-6 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
+          >
+            Get Pro Version – $29
+          </button>
 
           <p className="mt-2 text-xs text-slate-400">
             Currently validating interest.
@@ -539,4 +556,3 @@ export default function Home() {
     </main>
   );
 }
-
