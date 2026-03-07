@@ -273,20 +273,7 @@ export default function Home() {
                   </>
                 )}
 
-                {result.breakEvenClients != null &&
-                  parsedInput.pricePerClient != null &&
-                  result.contributionPerClient != null &&
-                  result.contributionPerClient > 0 &&
-                  result.breakEvenClients > 1 && (
-                    <p className="mt-3 text-sm text-rose-200/90">
-                      If you charged{" "}
-                      <span className="font-semibold">
-                        {formatMoney(parsedInput.pricePerClient * 1.3)}
-                      </span>{" "}
-                      instead of {formatMoney(parsedInput.pricePerClient)}, you
-                      could reduce the number of clients needed to break even.
-                    </p>
-                  )}
+                
               </div>
 
               <ResultCard
