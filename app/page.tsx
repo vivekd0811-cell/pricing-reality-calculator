@@ -7,6 +7,7 @@ import { calculate, type CalculatorField } from "@/lib/calc";
 import { formatNumber, parseNumber } from "@/lib/format";
 
 type CurrencyCode = "USD" | "EUR" | "GBP" | "INR";
+type PricingState = "losing" | "unsustainable" | "fragile" | "healthy";
 
 const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD ($) — US Dollar" },
@@ -15,8 +16,18 @@ const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "INR", label: "INR (₹) — Indian Rupee" },
 ];
 
+const PRO_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform";
+
 export default function Home() {
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
+  const [copied, setCopied] = useState(false);
+
+  const [pricePerClient, setPricePerClient] = useState("5000");
+  const [costPerClient, setCostPerClient] = useState("1500");
+  const [fixedCost, setFixedCost] = useState("20000");
+  const [targetProfit, setTargetProfit] = useState("10000");
+  const [currentClients, setCurrentClients] = useState("10");
 
   const currencySymbol = useMemo(() => {
     const parts = new Intl.NumberFormat(undefined, {
@@ -25,6 +36,7 @@ export default function Home() {
       currencyDisplay: "narrowSymbol",
       maximumFractionDigits: 0,
     }).formatToParts(0);
+
     return parts.find((p) => p.type === "currency")?.value ?? "$";
   }, [currency]);
 
@@ -36,12 +48,6 @@ export default function Home() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(Math.round(value));
-
-  const [pricePerClient, setPricePerClient] = useState("5000");
-  const [costPerClient, setCostPerClient] = useState("1500");
-  const [fixedCost, setFixedCost] = useState("20000");
-  const [targetProfit, setTargetProfit] = useState("10000");
-  const [currentClients, setCurrentClients] = useState("10");
 
   const parsedInput = useMemo(
     () => ({
@@ -108,6 +114,193 @@ export default function Home() {
   const getFieldError = (field: CalculatorField) =>
     result.errors.find((e) => e.field === field)?.message;
 
+  const pricingState = useMemo<PricingState>(() => {
+    if (result.contributionPerClient != null && result.contributionPerClient <= 0) {
+      return "losing";
+    }
+
+    if (
+      result.contributionMarginPct != null &&
+      (result.contributionMarginPct < 30 ||
+        (result.breakEvenClients != null && result.breakEvenClients > 20))
+    ) {
+      return "unsustainable";
+    }
+
+    if (
+      result.contributionMarginPct != null &&
+      (result.contributionMarginPct < 50 ||
+        (result.breakEvenClients != null && result.breakEvenClients > 10))
+    ) {
+      return "fragile";
+    }
+
+    return "healthy";
+  }, [
+    result.contributionPerClient,
+    result.contributionMarginPct,
+    result.breakEvenClients,
+  ]);
+
+  const realityCheckContent = useMemo(() => {
+    switch (pricingState) {
+      case "losing":
+        return {
+          title: "You are losing money on every client.",
+          body: "More sales will make the problem worse. Your pricing or delivery costs need to change immediately.",
+          shortLabel: "Losing money on every client",
+          shortTakeaway:
+            "More sales make the problem worse unless pricing or delivery costs change.",
+          border: "border-rose-500/40",
+          bg: "bg-rose-950/20",
+          eyebrow: "text-rose-300",
+        };
+      case "unsustainable":
+        return {
+          title: "Your current pricing is likely unsustainable.",
+          body: "You need better pricing, lower delivery costs, or both. Right now your model depends on too many clients to stay healthy.",
+          shortLabel: "Unsustainable pricing",
+          shortTakeaway:
+            "Your margins are too thin for a stable, resilient business.",
+          border: "border-amber-500/40",
+          bg: "bg-amber-950/20",
+          eyebrow: "text-amber-300",
+        };
+      case "fragile":
+        return {
+          title: "Your pricing is survivable, but fragile.",
+          body: "One bad month, discount, or a few lost clients could hurt the business more than you think.",
+          shortLabel: "Fragile pricing",
+          shortTakeaway:
+            "You can survive, but there is not much room for error.",
+          border: "border-yellow-500/40",
+          bg: "bg-yellow-950/20",
+          eyebrow: "text-yellow-300",
+        };
+      case "healthy":
+      default:
+        return {
+          title: "You have a viable pricing model.",
+          body: "Your economics look healthy at a quick glance. Now the goal is to protect and improve that margin as you grow.",
+          shortLabel: "Healthy pricing",
+          shortTakeaway:
+            "Your pricing has enough room to support a real business.",
+          border: "border-emerald-500/40",
+          bg: "bg-emerald-950/20",
+          eyebrow: "text-emerald-300",
+        };
+    }
+  }, [pricingState]);
+
+  const proCta = useMemo(() => {
+    switch (pricingState) {
+      case "losing":
+        return {
+          title: "Stop selling unprofitable work",
+          body:
+            "Use the Pro model to test pricing, cost cuts, and survival scenarios before you add more clients.",
+          button: "See Pro Model – $29",
+        };
+      case "unsustainable":
+        return {
+          title: "Your pricing needs stress testing",
+          body:
+            "Compare multiple pricing options before thin margins turn growth into a trap.",
+          button: "See Pro Model – $29",
+        };
+      case "fragile":
+        return {
+          title: "You need more margin for safety",
+          body:
+            "Test churn, founder salary, and runway before fragile economics become a cash problem.",
+          button: "See Pro Model – $29",
+        };
+      case "healthy":
+      default:
+        return {
+          title: "Your pricing works — now optimize it",
+          body:
+            "Use the Pro version to model growth, founder pay, churn, and runway with more confidence.",
+          button: "See Pro Model – $29",
+        };
+    }
+  }, [pricingState]);
+
+  const shareText = useMemo(() => {
+    const breakEvenClientsText =
+      result.breakEvenClients != null
+        ? `${formatNumber(result.breakEvenClients)}`
+        : "Not reachable";
+
+    const breakEvenRevenueText =
+      result.breakEvenRevenue != null
+        ? formatMoney(result.breakEvenRevenue)
+        : "Not reachable";
+
+    const marginText =
+      result.contributionMarginPct != null
+        ? `${result.contributionMarginPct.toFixed(1)}%`
+        : "—";
+
+    return `I ran my numbers through the Break-even & Pricing Reality Calculator.
+
+Result: ${realityCheckContent.shortLabel}
+Break-even clients: ${breakEvenClientsText}
+Break-even revenue: ${breakEvenRevenueText}
+Gross margin: ${marginText}
+
+${realityCheckContent.shortTakeaway}
+
+Check your own pricing reality:
+https://pricing-reality-calculator.vercel.app/`;
+  }, [
+    realityCheckContent.shortLabel,
+    realityCheckContent.shortTakeaway,
+    result.breakEvenClients,
+    result.breakEvenRevenue,
+    result.contributionMarginPct,
+  ]);
+
+  const shareUrl = useMemo(() => encodeURIComponent(shareText), [shareText]);
+
+  const formUrlWithContext = useMemo(() => {
+    const params = new URLSearchParams({
+      source: "pricing-reality-calculator",
+      result: realityCheckContent.shortLabel,
+      breakEvenClients:
+        result.breakEvenClients != null
+          ? String(result.breakEvenClients)
+          : "not-reachable",
+      breakEvenRevenue:
+        result.breakEvenRevenue != null
+          ? String(Math.round(result.breakEvenRevenue))
+          : "not-reachable",
+      grossMargin:
+        result.contributionMarginPct != null
+          ? result.contributionMarginPct.toFixed(1)
+          : "na",
+      currency,
+    });
+
+    return `${PRO_FORM_URL}?usp=pp_url&${params.toString()}`;
+  }, [
+    realityCheckContent.shortLabel,
+    result.breakEvenClients,
+    result.breakEvenRevenue,
+    result.contributionMarginPct,
+    currency,
+  ]);
+
+  const handleCopyResult = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen justify-center bg-slate-950 px-4 py-8 text-slate-50">
       <div className="flex w-full max-w-6xl flex-col gap-8 rounded-3xl border border-slate-800/80 bg-slate-950/80 p-5 shadow-[0_0_0_1px_rgba(15,23,42,0.9),0_40px_120px_rgba(15,23,42,0.9)] sm:p-8 lg:p-10">
@@ -120,9 +313,9 @@ export default function Home() {
               Break-even &amp; Pricing Reality Calculator
             </h1>
             <p className="max-w-2xl text-sm text-slate-300/90">
-              For service and retainer businesses that sell monthly retainers.
-              Plug in your pricing and costs to see how many clients you need
-              just to stand still.
+              A brutally simple calculator for service and retainer businesses.
+              Plug in your pricing and costs to see whether your model can
+              actually support a real business.
             </p>
           </div>
 
@@ -218,62 +411,107 @@ export default function Home() {
             </h2>
 
             <div className="grid gap-3">
-              {/* Founder Reality Check */}
-              <div className="rounded-xl border border-rose-500/40 bg-rose-950/20 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">
+              <div
+                className={`rounded-xl border px-4 py-3 ${realityCheckContent.border} ${realityCheckContent.bg}`}
+              >
+                <p
+                  className={`text-xs font-semibold uppercase tracking-[0.22em] ${realityCheckContent.eyebrow}`}
+                >
                   Founder Reality Check
                 </p>
 
-                {result.contributionPerClient != null &&
-                result.contributionPerClient <= 0 ? (
-                  <>
-                    <h3 className="mt-2 text-lg font-semibold text-white">
-                      You are losing money on every client.
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-300">
-                      More sales will make the problem worse. Your pricing or
-                      delivery costs need to change immediately.
-                    </p>
-                  </>
-                ) : result.contributionMarginPct != null &&
-                  (result.contributionMarginPct < 30 ||
-                    (result.breakEvenClients != null &&
-                      result.breakEvenClients > 20)) ? (
-                  <>
-                    <h3 className="mt-2 text-lg font-semibold text-white">
-                      Your current pricing is likely unsustainable.
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-300">
-                      You need better pricing, lower delivery costs, or both.
-                      Right now your model depends on too many clients to stay
-                      healthy.
-                    </p>
-                  </>
-                ) : result.contributionMarginPct != null &&
-                  (result.contributionMarginPct < 50 ||
-                    (result.breakEvenClients != null &&
-                      result.breakEvenClients > 10)) ? (
-                  <>
-                    <h3 className="mt-2 text-lg font-semibold text-white">
-                      Your pricing is survivable, but fragile.
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-300">
-                      One bad month or losing a few clients could hurt your
-                      business.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="mt-2 text-lg font-semibold text-white">
-                      You have a viable pricing model.
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-300">
-                      Your economics look healthy at a quick glance.
-                    </p>
-                  </>
-                )}
+                <h3 className="mt-2 text-lg font-semibold text-white">
+                  {realityCheckContent.title}
+                </h3>
 
-                
+                <p className="mt-2 text-sm text-slate-300">
+                  {realityCheckContent.body}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/70 px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                      Share this result
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold text-white">
+                      {realityCheckContent.shortLabel}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      {realityCheckContent.shortTakeaway}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={handleCopyResult}
+                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                    >
+                      {copied ? "Copied" : "Copy result"}
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        window.open(
+                          `https://twitter.com/intent/tweet?text=${shareUrl}`,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                    >
+                      Share on X
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        window.open(
+                          `https://www.linkedin.com/feed/?shareActive=true&text=${shareUrl}`,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                    >
+                      Share on LinkedIn
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                    <p className="text-xs text-slate-400">Break-even clients</p>
+                    <p className="mt-1 text-lg font-semibold text-white">
+                      {result.breakEvenClients != null
+                        ? formatNumber(result.breakEvenClients)
+                        : "—"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                    <p className="text-xs text-slate-400">Break-even revenue</p>
+                    <p className="mt-1 text-lg font-semibold text-white">
+                      {result.breakEvenRevenue != null
+                        ? formatMoney(result.breakEvenRevenue)
+                        : "—"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                    <p className="text-xs text-slate-400">Gross margin</p>
+                    <p className="mt-1 text-lg font-semibold text-white">
+                      {result.contributionMarginPct != null
+                        ? `${result.contributionMarginPct.toFixed(1)}%`
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-slate-400">
+                  Know another founder who may be underpricing? Send them this
+                  tool.
+                </p>
               </div>
 
               <ResultCard
@@ -472,11 +710,17 @@ export default function Home() {
 
         <section className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-slate-900/60 p-6 text-center">
           <h3 className="text-lg font-semibold text-emerald-300">
-            🚀 Want the Founder Pro Version?
+            🚀 {proCta.title}
           </h3>
 
-          <p className="mt-2 text-sm text-slate-300">
-            Get the advanced financial model with:
+          <p className="mt-2 text-sm text-slate-300">{proCta.body}</p>
+
+          <p className="mt-3 text-sm font-medium text-emerald-300">
+            👉 Most founders don’t realize this until it’s too late.
+          </p>
+
+          <p className="mt-4 text-sm text-slate-300">
+            The Pro version includes:
             <br />
             • 12-month profit projection
             <br />
@@ -490,19 +734,14 @@ export default function Home() {
           </p>
 
           <button
-            onClick={() =>
-              window.open(
-                "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform",
-                "_blank",
-              )
-            }
+            onClick={() => window.open(formUrlWithContext, "_blank", "noopener,noreferrer")}
             className="mt-4 rounded-lg bg-emerald-500 px-6 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
           >
-            Get Pro Version – $29
+            {proCta.button}
           </button>
 
           <p className="mt-2 text-xs text-slate-400">
-            Currently validating interest.
+            2 minutes. No payment now. Just tell me if you’d use this.
           </p>
         </section>
 
