@@ -16,7 +16,8 @@ const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "INR", label: "INR (₹) — Indian Rupee" },
 ];
 
-const PRO_FORM_URL =
+const SITE_URL = "https://pricing-reality-calculator.vercel.app/";
+const WAITLIST_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform";
 
 export default function Home() {
@@ -115,7 +116,10 @@ export default function Home() {
     result.errors.find((e) => e.field === field)?.message;
 
   const pricingState = useMemo<PricingState>(() => {
-    if (result.contributionPerClient != null && result.contributionPerClient <= 0) {
+    if (
+      result.contributionPerClient != null &&
+      result.contributionPerClient <= 0
+    ) {
       return "losing";
     }
 
@@ -196,32 +200,32 @@ export default function Home() {
     switch (pricingState) {
       case "losing":
         return {
-          title: "Stop selling unprofitable work",
+          title: "Get early access to the Pro version",
           body:
-            "Use the Pro model to test pricing, cost cuts, and survival scenarios before you add more clients.",
-          button: "See Pro Model – $29",
+            "Test pricing changes, cost cuts, and survival scenarios before you add more clients and deepen the loss.",
+          button: "Get Pro Version – Join Waitlist (Early Access)",
         };
       case "unsustainable":
         return {
-          title: "Your pricing needs stress testing",
+          title: "Stress test your pricing before it hurts growth",
           body:
-            "Compare multiple pricing options before thin margins turn growth into a trap.",
-          button: "See Pro Model – $29",
+            "Compare pricing options, margins, and client targets before thin economics become a bigger problem.",
+          button: "Get Pro Version – Join Waitlist (Early Access)",
         };
       case "fragile":
         return {
-          title: "You need more margin for safety",
+          title: "Create more margin before a bad month hits",
           body:
-            "Test churn, founder salary, and runway before fragile economics become a cash problem.",
-          button: "See Pro Model – $29",
+            "Model churn, founder salary, and runway so fragile pricing does not turn into a cash problem.",
+          button: "Get Pro Version – Join Waitlist (Early Access)",
         };
       case "healthy":
       default:
         return {
-          title: "Your pricing works — now optimize it",
+          title: "Your pricing works — now optimize it further",
           body:
-            "Use the Pro version to model growth, founder pay, churn, and runway with more confidence.",
-          button: "See Pro Model – $29",
+            "Use the Pro version to compare scenarios, plan founder pay, and model more realistic growth decisions.",
+          button: "Get Pro Version – Join Waitlist (Early Access)",
         };
     }
   }, [pricingState]);
@@ -252,7 +256,7 @@ Gross margin: ${marginText}
 ${realityCheckContent.shortTakeaway}
 
 Check your own pricing reality:
-https://pricing-reality-calculator.vercel.app/`;
+${SITE_URL}`;
   }, [
     realityCheckContent.shortLabel,
     realityCheckContent.shortTakeaway,
@@ -263,7 +267,7 @@ https://pricing-reality-calculator.vercel.app/`;
 
   const shareUrl = useMemo(() => encodeURIComponent(shareText), [shareText]);
 
-  const formUrlWithContext = useMemo(() => {
+  const waitlistUrlWithContext = useMemo(() => {
     const params = new URLSearchParams({
       source: "pricing-reality-calculator",
       result: realityCheckContent.shortLabel,
@@ -280,21 +284,81 @@ https://pricing-reality-calculator.vercel.app/`;
           ? result.contributionMarginPct.toFixed(1)
           : "na",
       currency,
+      pricePerClient: parsedInput.pricePerClient != null
+        ? String(parsedInput.pricePerClient)
+        : "na",
+      costPerClient: parsedInput.costPerClient != null
+        ? String(parsedInput.costPerClient)
+        : "na",
+      fixedCost: parsedInput.fixedCost != null
+        ? String(parsedInput.fixedCost)
+        : "na",
+      targetProfit: targetProfitValue != null ? String(targetProfitValue) : "na",
+      currentClients:
+        currentClientsValue != null ? String(currentClientsValue) : "na",
     });
 
-    return `${PRO_FORM_URL}?usp=pp_url&${params.toString()}`;
+    return `${WAITLIST_FORM_URL}?usp=pp_url&${params.toString()}`;
   }, [
     realityCheckContent.shortLabel,
     result.breakEvenClients,
     result.breakEvenRevenue,
     result.contributionMarginPct,
     currency,
+    parsedInput.pricePerClient,
+    parsedInput.costPerClient,
+    parsedInput.fixedCost,
+    targetProfitValue,
+    currentClientsValue,
   ]);
+
+  const trackEvent = (
+    eventName: string,
+    extra?: Record<string, string | number | null>,
+  ) => {
+    if (typeof window === "undefined") return;
+
+    const payload = {
+      event: eventName,
+      calculator_name: "pricing_reality_calculator",
+      pricing_state: pricingState,
+      result_label: realityCheckContent.shortLabel,
+      currency,
+      break_even_clients: result.breakEvenClients,
+      break_even_revenue:
+        result.breakEvenRevenue != null
+          ? Math.round(result.breakEvenRevenue)
+          : null,
+      gross_margin_pct:
+        result.contributionMarginPct != null
+          ? Number(result.contributionMarginPct.toFixed(1))
+          : null,
+      ...extra,
+    };
+
+    const win = window as Window & {
+      dataLayer?: Array<Record<string, unknown>>;
+      gtag?: (...args: unknown[]) => void;
+    };
+
+    win.dataLayer = win.dataLayer || [];
+    win.dataLayer.push(payload);
+
+    if (typeof win.gtag === "function") {
+      win.gtag("event", eventName, payload);
+    }
+  };
+
+  const openWaitlist = (placement: "top" | "results" | "bottom") => {
+    trackEvent("waitlist_cta_click", { placement });
+    window.open(waitlistUrlWithContext, "_blank", "noopener,noreferrer");
+  };
 
   const handleCopyResult = async () => {
     try {
       await navigator.clipboard.writeText(shareText);
       setCopied(true);
+      trackEvent("copy_result_click");
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
@@ -349,6 +413,36 @@ https://pricing-reality-calculator.vercel.app/`;
             </p>
           </div>
         </header>
+
+        <section className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-slate-900/60 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">
+                Early access
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
+                Get Pro Version – Join Waitlist (Early Access)
+              </h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Be the first to access advanced pricing insights, scenario
+                comparison, churn impact, and profit planning tools built for
+                service businesses.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 lg:items-end">
+              <button
+                onClick={() => openWaitlist("top")}
+                className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+              >
+                Get Pro Version – Join Waitlist
+              </button>
+              <p className="text-xs text-slate-400">
+                No payment now. Just join the early-access waitlist.
+              </p>
+            </div>
+          </div>
+        </section>
 
         <section className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="space-y-5">
@@ -512,6 +606,36 @@ https://pricing-reality-calculator.vercel.app/`;
                   Know another founder who may be underpricing? Send them this
                   tool.
                 </p>
+              </div>
+
+              <div className="rounded-xl border border-emerald-500/35 bg-emerald-950/25 px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">
+                      Next step
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold text-white">
+                      Get Pro Version – Join Waitlist (Early Access)
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      Want deeper planning than this free calculator? Join the
+                      waitlist for advanced pricing, scenario, churn, and profit
+                      tools.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <button
+                      onClick={() => openWaitlist("results")}
+                      className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                    >
+                      Get Pro Version – Join Waitlist
+                    </button>
+                    <p className="text-xs text-slate-400">
+                      2 minutes. No payment now.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <ResultCard
@@ -734,14 +858,14 @@ https://pricing-reality-calculator.vercel.app/`;
           </p>
 
           <button
-            onClick={() => window.open(formUrlWithContext, "_blank", "noopener,noreferrer")}
+            onClick={() => openWaitlist("bottom")}
             className="mt-4 rounded-lg bg-emerald-500 px-6 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
           >
             {proCta.button}
           </button>
 
           <p className="mt-2 text-xs text-slate-400">
-            2 minutes. No payment now. Just tell me if you’d use this.
+            Be the first to access advanced pricing insights and profit tools.
           </p>
         </section>
 
