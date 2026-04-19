@@ -284,15 +284,16 @@ ${SITE_URL}`;
           ? result.contributionMarginPct.toFixed(1)
           : "na",
       currency,
-      pricePerClient: parsedInput.pricePerClient != null
-        ? String(parsedInput.pricePerClient)
-        : "na",
-      costPerClient: parsedInput.costPerClient != null
-        ? String(parsedInput.costPerClient)
-        : "na",
-      fixedCost: parsedInput.fixedCost != null
-        ? String(parsedInput.fixedCost)
-        : "na",
+      pricePerClient:
+        parsedInput.pricePerClient != null
+          ? String(parsedInput.pricePerClient)
+          : "na",
+      costPerClient:
+        parsedInput.costPerClient != null
+          ? String(parsedInput.costPerClient)
+          : "na",
+      fixedCost:
+        parsedInput.fixedCost != null ? String(parsedInput.fixedCost) : "na",
       targetProfit: targetProfitValue != null ? String(targetProfitValue) : "na",
       currentClients:
         currentClientsValue != null ? String(currentClientsValue) : "na",
@@ -349,7 +350,9 @@ ${SITE_URL}`;
     }
   };
 
-  const openWaitlist = (placement: "top" | "results" | "bottom") => {
+  const openWaitlist = (
+    placement: "top" | "results" | "profit_plan_cta" | "bottom",
+  ) => {
     trackEvent("waitlist_cta_click", { placement });
     window.open(waitlistUrlWithContext, "_blank", "noopener,noreferrer");
   };
@@ -685,20 +688,20 @@ ${SITE_URL}`;
                         result.breakEvenClients === 1 ? "" : "s"
                       }`
                     : result.isValid
-                    ? "No finite break-even"
-                    : "—"
+                      ? "No finite break-even"
+                      : "—"
                 }
                 subtitle="Number of paying clients you need each month just to cover your fixed costs."
                 tone={
                   !result.isValid
                     ? "neutral"
                     : result.breakEvenClients == null
-                    ? "danger"
-                    : result.breakEvenClients <= 10
-                    ? "success"
-                    : result.breakEvenClients <= 25
-                    ? "warning"
-                    : "danger"
+                      ? "danger"
+                      : result.breakEvenClients <= 10
+                        ? "success"
+                        : result.breakEvenClients <= 25
+                          ? "warning"
+                          : "danger"
                 }
               />
 
@@ -708,18 +711,48 @@ ${SITE_URL}`;
                   result.breakEvenRevenue != null
                     ? formatMoney(result.breakEvenRevenue)
                     : result.isValid
-                    ? "Not reachable with current pricing"
-                    : "—"
+                      ? "Not reachable with current pricing"
+                      : "—"
                 }
                 subtitle="Revenue level where the business stops burning cash and starts earning true margin."
                 tone={
                   !result.isValid
                     ? "neutral"
                     : result.breakEvenRevenue == null
-                    ? "danger"
-                    : "neutral"
+                      ? "danger"
+                      : "neutral"
                 }
               />
+
+              <div className="rounded-xl border border-amber-500/35 bg-amber-950/20 px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">
+                      Profit plan
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold text-white">
+                      Most founders stop here and still scale wrong
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      Want a realistic plan to hit your target monthly profit?
+                      Get deeper pricing, profit, and scenario guidance with
+                      free early access.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <button
+                      onClick={() => openWaitlist("profit_plan_cta")}
+                      className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                    >
+                      Get My Profit Plan
+                    </button>
+                    <p className="text-xs text-slate-400">
+                      Free early access. Limited spots.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -768,20 +801,20 @@ ${SITE_URL}`;
                         incomeReality.requiredClients === 1 ? "" : "s"
                       }`
                     : result.isValid
-                    ? "Not reachable with current pricing"
-                    : "—"
+                      ? "Not reachable with current pricing"
+                      : "—"
                 }
                 subtitle="How many clients you need (at this price and cost structure) to hit your profit goal."
                 tone={
                   !result.isValid
                     ? "neutral"
                     : incomeReality.requiredClients == null
-                    ? "danger"
-                    : incomeReality.requiredClients <= 10
-                    ? "success"
-                    : incomeReality.requiredClients <= 25
-                    ? "warning"
-                    : "danger"
+                      ? "danger"
+                      : incomeReality.requiredClients <= 10
+                        ? "success"
+                        : incomeReality.requiredClients <= 25
+                          ? "warning"
+                          : "danger"
                 }
               />
 
@@ -791,16 +824,16 @@ ${SITE_URL}`;
                   incomeReality.requiredRevenue != null
                     ? formatMoney(incomeReality.requiredRevenue)
                     : result.isValid
-                    ? "Not reachable with current pricing"
-                    : "—"
+                      ? "Not reachable with current pricing"
+                      : "—"
                 }
                 subtitle="Total top-line you need to reliably produce your target monthly profit."
                 tone={
                   !result.isValid
                     ? "neutral"
                     : incomeReality.requiredRevenue == null
-                    ? "danger"
-                    : "neutral"
+                      ? "danger"
+                      : "neutral"
                 }
               />
 
@@ -810,10 +843,10 @@ ${SITE_URL}`;
                   incomeReality.requiredPriceAtCurrentClients != null
                     ? formatMoney(incomeReality.requiredPriceAtCurrentClients)
                     : currentClientsValue == null || currentClientsValue === 0
-                    ? "—"
-                    : result.isValid
-                    ? "Not reachable with current economics"
-                    : "—"
+                      ? "—"
+                      : result.isValid
+                        ? "Not reachable with current economics"
+                        : "—"
                 }
                 subtitle={
                   currentClientsValue == null || currentClientsValue === 0
@@ -824,8 +857,8 @@ ${SITE_URL}`;
                   !result.isValid
                     ? "neutral"
                     : incomeReality.requiredPriceAtCurrentClients == null
-                    ? "warning"
-                    : "neutral"
+                      ? "warning"
+                      : "neutral"
                 }
               />
             </div>
