@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NumberInput } from "@/components/NumberInput";
 import { ResultCard } from "@/components/ResultCard";
 import { calculate, type CalculatorField } from "@/lib/calc";
@@ -8,6 +8,7 @@ import { formatNumber, parseNumber } from "@/lib/format";
 
 type CurrencyCode = "USD" | "EUR" | "GBP" | "INR";
 type PricingState = "losing" | "unsustainable" | "fragile" | "healthy";
+type WaitlistPlacement = "top" | "results" | "profit_plan_cta" | "bottom";
 
 const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD ($) — US Dollar" },
@@ -29,6 +30,8 @@ export default function Home() {
   const [fixedCost, setFixedCost] = useState("20000");
   const [targetProfit, setTargetProfit] = useState("10000");
   const [currentClients, setCurrentClients] = useState("10");
+
+  const lastTrackedResultKey = useRef<string | null>(null);
 
   const currencySymbol = useMemo(() => {
     const parts = new Intl.NumberFormat(undefined, {
@@ -350,9 +353,42 @@ ${SITE_URL}`;
     }
   };
 
-  const openWaitlist = (
-    placement: "top" | "results" | "profit_plan_cta" | "bottom",
-  ) => {
+  useEffect(() => {
+    if (!result.isValid) return;
+
+    const key = JSON.stringify({
+      pricePerClient: parsedInput.pricePerClient,
+      costPerClient: parsedInput.costPerClient,
+      fixedCost: parsedInput.fixedCost,
+      targetProfit: targetProfitValue,
+      currentClients: currentClientsValue,
+      pricingState,
+      breakEvenClients: result.breakEvenClients,
+      breakEvenRevenue: result.breakEvenRevenue,
+      grossMargin: result.contributionMarginPct,
+    });
+
+    if (lastTrackedResultKey.current === key) return;
+
+    lastTrackedResultKey.current = key;
+    trackEvent("calculator_result_viewed", {
+      target_profit: targetProfitValue,
+      current_clients: currentClientsValue,
+    });
+  }, [
+    result.isValid,
+    result.breakEvenClients,
+    result.breakEvenRevenue,
+    result.contributionMarginPct,
+    parsedInput.pricePerClient,
+    parsedInput.costPerClient,
+    parsedInput.fixedCost,
+    targetProfitValue,
+    currentClientsValue,
+    pricingState,
+  ]);
+
+  const openWaitlist = (placement: WaitlistPlacement) => {
     trackEvent("waitlist_cta_click", { placement });
     window.open(waitlistUrlWithContext, "_blank", "noopener,noreferrer");
   };
@@ -438,7 +474,7 @@ ${SITE_URL}`;
                 onClick={() => openWaitlist("top")}
                 className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
               >
-                Get Pro Version – Join Waitlist
+                Get Pro Version – Join Waitlist (Early Access)
               </button>
               <p className="text-xs text-slate-400">
                 No payment now. Just join the early-access waitlist.
@@ -632,7 +668,7 @@ ${SITE_URL}`;
                       onClick={() => openWaitlist("results")}
                       className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
                     >
-                      Get Pro Version – Join Waitlist
+                      Get Pro Version – Join Waitlist (Early Access)
                     </button>
                     <p className="text-xs text-slate-400">
                       2 minutes. No payment now.
