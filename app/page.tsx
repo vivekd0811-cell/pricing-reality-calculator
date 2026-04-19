@@ -25,7 +25,7 @@ export default function Home() {
 
   const [pricePerClient, setPricePerClient] = useState("5000");
   const [costPerClient, setCostPerClient] = useState("1500");
-  const [fixedCost, setFixedCost] = useState("20000");
+  const [fixedCost, setFixedCost] = useState("2000");
   const [targetProfit, setTargetProfit] = useState("10000");
   const [currentClients, setCurrentClients] = useState("10");
 
@@ -64,6 +64,13 @@ export default function Home() {
 
   const targetProfitValue = parseNumber(targetProfit);
   const currentClientsValue = parseNumber(currentClients);
+
+  const targetProfitDisplay = useMemo(() => {
+    if (targetProfitValue == null || targetProfitValue <= 0) {
+      return currency === "INR" ? "₹1L" : "$1K";
+    }
+    return `${formatMoney(targetProfitValue)}/month profit`;
+  }, [targetProfitValue, currency]);
 
   const incomeReality = useMemo(() => {
     if (
@@ -523,23 +530,23 @@ export default function Home() {
                   Next step
                 </p>
 
-                <p className="mt-3 text-base font-semibold text-white sm:text-lg">
-                  👉 This looks good on paper. But most founders still fail at
-                  this stage.
+                <p className="mt-3 text-lg font-semibold leading-snug text-white sm:text-xl">
+                  Most founders think they&apos;re profitable — until they run
+                  this.
                 </p>
 
-                <h3 className="mt-4 text-xl font-semibold text-white sm:text-2xl">
-                  Get Your Personalized Profit Plan
+                <h3 className="mt-4 text-2xl font-semibold leading-snug text-white sm:text-3xl">
+                  See Exactly How to Reach {targetProfitDisplay}
                 </h3>
 
-                <p className="mt-3 text-sm leading-6 text-slate-300">
-                  Most founders stop at break-even and still scale wrong.
+                <p className="mt-4 text-sm leading-6 text-slate-300">
+                  Get your personalized plan based on your numbers:
                 </p>
 
                 <div className="mt-3 space-y-1 text-sm text-slate-200">
-                  <p>• Your real profit potential</p>
-                  <p>• Exact clients needed for your income goal</p>
-                  <p>• 3 specific ways to improve your pricing</p>
+                  <p>• How many clients you actually need</p>
+                  <p>• The exact price you should charge</p>
+                  <p>• Where your pricing is leaking profit</p>
                 </div>
 
                 <div className="mt-5 flex flex-col items-start gap-3 sm:items-center">
@@ -547,11 +554,11 @@ export default function Home() {
                     onClick={() => openProfitPlan("results_primary")}
                     className="w-full rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 sm:w-auto sm:min-w-[280px]"
                   >
-                    Email Me My Profit Plan
+                    Send Me My Profit Plan
                   </button>
 
                   <p className="text-xs text-slate-400">
-                    Free. Built from your inputs. No spam.
+                    Takes 30 seconds. Free. No spam.
                   </p>
                 </div>
               </div>
