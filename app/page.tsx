@@ -8,7 +8,7 @@ import { formatNumber, parseNumber } from "@/lib/format";
 
 type CurrencyCode = "USD" | "EUR" | "GBP" | "INR";
 type PricingState = "losing" | "unsustainable" | "fragile" | "healthy";
-type WaitlistPlacement = "top" | "results" | "profit_plan_cta" | "bottom";
+type ProfitPlanPlacement = "results_primary";
 
 const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD ($) — US Dollar" },
@@ -17,13 +17,11 @@ const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "INR", label: "INR (₹) — Indian Rupee" },
 ];
 
-const SITE_URL = "https://pricing-reality-calculator.vercel.app/";
-const WAITLIST_FORM_URL =
+const PROFIT_PLAN_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSdIR5yyhZkBTTKpNF7d-sqGWmR0g87xSvvEmkNr000YlB2VOA/viewform";
 
 export default function Home() {
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
-  const [copied, setCopied] = useState(false);
 
   const [pricePerClient, setPricePerClient] = useState("5000");
   const [costPerClient, setCostPerClient] = useState("1500");
@@ -199,80 +197,10 @@ export default function Home() {
     }
   }, [pricingState]);
 
-  const proCta = useMemo(() => {
-    switch (pricingState) {
-      case "losing":
-        return {
-          title: "Get early access to the Pro version",
-          body:
-            "Test pricing changes, cost cuts, and survival scenarios before you add more clients and deepen the loss.",
-          button: "Get Pro Version – Join Waitlist (Early Access)",
-        };
-      case "unsustainable":
-        return {
-          title: "Stress test your pricing before it hurts growth",
-          body:
-            "Compare pricing options, margins, and client targets before thin economics become a bigger problem.",
-          button: "Get Pro Version – Join Waitlist (Early Access)",
-        };
-      case "fragile":
-        return {
-          title: "Create more margin before a bad month hits",
-          body:
-            "Model churn, founder salary, and runway so fragile pricing does not turn into a cash problem.",
-          button: "Get Pro Version – Join Waitlist (Early Access)",
-        };
-      case "healthy":
-      default:
-        return {
-          title: "Your pricing works — now optimize it further",
-          body:
-            "Use the Pro version to compare scenarios, plan founder pay, and model more realistic growth decisions.",
-          button: "Get Pro Version – Join Waitlist (Early Access)",
-        };
-    }
-  }, [pricingState]);
-
-  const shareText = useMemo(() => {
-    const breakEvenClientsText =
-      result.breakEvenClients != null
-        ? `${formatNumber(result.breakEvenClients)}`
-        : "Not reachable";
-
-    const breakEvenRevenueText =
-      result.breakEvenRevenue != null
-        ? formatMoney(result.breakEvenRevenue)
-        : "Not reachable";
-
-    const marginText =
-      result.contributionMarginPct != null
-        ? `${result.contributionMarginPct.toFixed(1)}%`
-        : "—";
-
-    return `I ran my numbers through the Break-even & Pricing Reality Calculator.
-
-Result: ${realityCheckContent.shortLabel}
-Break-even clients: ${breakEvenClientsText}
-Break-even revenue: ${breakEvenRevenueText}
-Gross margin: ${marginText}
-
-${realityCheckContent.shortTakeaway}
-
-Check your own pricing reality:
-${SITE_URL}`;
-  }, [
-    realityCheckContent.shortLabel,
-    realityCheckContent.shortTakeaway,
-    result.breakEvenClients,
-    result.breakEvenRevenue,
-    result.contributionMarginPct,
-  ]);
-
-  const shareUrl = useMemo(() => encodeURIComponent(shareText), [shareText]);
-
-  const waitlistUrlWithContext = useMemo(() => {
+  const profitPlanUrlWithContext = useMemo(() => {
     const params = new URLSearchParams({
       source: "pricing-reality-calculator",
+      offer: "profit-plan",
       result: realityCheckContent.shortLabel,
       breakEvenClients:
         result.breakEvenClients != null
@@ -300,9 +228,21 @@ ${SITE_URL}`;
       targetProfit: targetProfitValue != null ? String(targetProfitValue) : "na",
       currentClients:
         currentClientsValue != null ? String(currentClientsValue) : "na",
+      requiredClients:
+        incomeReality.requiredClients != null
+          ? String(incomeReality.requiredClients)
+          : "na",
+      requiredRevenue:
+        incomeReality.requiredRevenue != null
+          ? String(Math.round(incomeReality.requiredRevenue))
+          : "na",
+      requiredPriceAtCurrentClients:
+        incomeReality.requiredPriceAtCurrentClients != null
+          ? String(Math.round(incomeReality.requiredPriceAtCurrentClients))
+          : "na",
     });
 
-    return `${WAITLIST_FORM_URL}?usp=pp_url&${params.toString()}`;
+    return `${PROFIT_PLAN_FORM_URL}?usp=pp_url&${params.toString()}`;
   }, [
     realityCheckContent.shortLabel,
     result.breakEvenClients,
@@ -314,6 +254,9 @@ ${SITE_URL}`;
     parsedInput.fixedCost,
     targetProfitValue,
     currentClientsValue,
+    incomeReality.requiredClients,
+    incomeReality.requiredRevenue,
+    incomeReality.requiredPriceAtCurrentClients,
   ]);
 
   const trackEvent = (
@@ -388,20 +331,23 @@ ${SITE_URL}`;
     pricingState,
   ]);
 
-  const openWaitlist = (placement: WaitlistPlacement) => {
-    trackEvent("waitlist_cta_click", { placement });
-    window.open(waitlistUrlWithContext, "_blank", "noopener,noreferrer");
-  };
+  const openProfitPlan = (placement: ProfitPlanPlacement) => {
+    trackEvent("profit_plan_cta_click", {
+      placement,
+      target_profit: targetProfitValue,
+      current_clients: currentClientsValue,
+      required_clients: incomeReality.requiredClients,
+      required_revenue:
+        incomeReality.requiredRevenue != null
+          ? Math.round(incomeReality.requiredRevenue)
+          : null,
+      required_price_at_current_clients:
+        incomeReality.requiredPriceAtCurrentClients != null
+          ? Math.round(incomeReality.requiredPriceAtCurrentClients)
+          : null,
+    });
 
-  const handleCopyResult = async () => {
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setCopied(true);
-      trackEvent("copy_result_click");
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
+    window.open(profitPlanUrlWithContext, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -452,36 +398,6 @@ ${SITE_URL}`;
             </p>
           </div>
         </header>
-
-        <section className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-slate-900/60 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">
-                Early access
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
-                Get Pro Version – Join Waitlist (Early Access)
-              </h2>
-              <p className="mt-2 text-sm text-slate-300">
-                Be the first to access advanced pricing insights, scenario
-                comparison, churn impact, and profit planning tools built for
-                service businesses.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 lg:items-end">
-              <button
-                onClick={() => openWaitlist("top")}
-                className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
-              >
-                Get Pro Version – Join Waitlist (Early Access)
-              </button>
-              <p className="text-xs text-slate-400">
-                No payment now. Just join the early-access waitlist.
-              </p>
-            </div>
-          </div>
-        </section>
 
         <section className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="space-y-5">
@@ -563,53 +479,13 @@ ${SITE_URL}`;
               </div>
 
               <div className="rounded-xl border border-slate-700/80 bg-slate-900/70 px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      Share this result
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold text-white">
-                      {realityCheckContent.shortLabel}
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-300">
-                      {realityCheckContent.shortTakeaway}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={handleCopyResult}
-                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                    >
-                      {copied ? "Copied" : "Copy result"}
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        window.open(
-                          `https://twitter.com/intent/tweet?text=${shareUrl}`,
-                          "_blank",
-                          "noopener,noreferrer",
-                        )
-                      }
-                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                    >
-                      Share on X
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        window.open(
-                          `https://www.linkedin.com/feed/?shareActive=true&text=${shareUrl}`,
-                          "_blank",
-                          "noopener,noreferrer",
-                        )
-                      }
-                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                    >
-                      Share on LinkedIn
-                    </button>
-                  </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">
+                    {realityCheckContent.shortLabel}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {realityCheckContent.shortTakeaway}
+                  </p>
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -640,40 +516,43 @@ ${SITE_URL}`;
                     </p>
                   </div>
                 </div>
-
-                <p className="mt-3 text-xs text-slate-400">
-                  Know another founder who may be underpricing? Send them this
-                  tool.
-                </p>
               </div>
 
-              <div className="rounded-xl border border-emerald-500/35 bg-emerald-950/25 px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">
-                      Next step
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold text-white">
-                      Get Pro Version – Join Waitlist (Early Access)
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-300">
-                      Want deeper planning than this free calculator? Join the
-                      waitlist for advanced pricing, scenario, churn, and profit
-                      tools.
-                    </p>
-                  </div>
+              <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-950/30 to-slate-900/60 px-5 py-5 shadow-[0_0_0_1px_rgba(245,158,11,0.18)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">
+                  Next step
+                </p>
 
-                  <div className="flex flex-col gap-2 sm:items-end">
-                    <button
-                      onClick={() => openWaitlist("results")}
-                      className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
-                    >
-                      Get Pro Version – Join Waitlist (Early Access)
-                    </button>
-                    <p className="text-xs text-slate-400">
-                      2 minutes. No payment now.
-                    </p>
-                  </div>
+                <p className="mt-3 text-base font-semibold text-white sm:text-lg">
+                  👉 This looks good on paper. But most founders still fail at
+                  this stage.
+                </p>
+
+                <h3 className="mt-4 text-xl font-semibold text-white sm:text-2xl">
+                  Get Your Personalized Profit Plan
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  Most founders stop at break-even and still scale wrong.
+                </p>
+
+                <div className="mt-3 space-y-1 text-sm text-slate-200">
+                  <p>• Your real profit potential</p>
+                  <p>• Exact clients needed for your income goal</p>
+                  <p>• 3 specific ways to improve your pricing</p>
+                </div>
+
+                <div className="mt-5 flex flex-col items-start gap-3 sm:items-center">
+                  <button
+                    onClick={() => openProfitPlan("results_primary")}
+                    className="w-full rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 sm:w-auto sm:min-w-[280px]"
+                  >
+                    Email Me My Profit Plan
+                  </button>
+
+                  <p className="text-xs text-slate-400">
+                    Free. Built from your inputs. No spam.
+                  </p>
                 </div>
               </div>
 
@@ -689,9 +568,9 @@ ${SITE_URL}`;
                   !result.isValid
                     ? "neutral"
                     : result.contributionPerClient != null &&
-                      result.contributionPerClient <= 0
-                    ? "danger"
-                    : "success"
+                        result.contributionPerClient <= 0
+                      ? "danger"
+                      : "success"
                 }
               />
 
@@ -707,12 +586,12 @@ ${SITE_URL}`;
                   !result.isValid
                     ? "neutral"
                     : result.contributionMarginPct != null &&
-                      result.contributionMarginPct < 20
-                    ? "danger"
-                    : result.contributionMarginPct != null &&
-                      result.contributionMarginPct < 35
-                    ? "warning"
-                    : "success"
+                        result.contributionMarginPct < 20
+                      ? "danger"
+                      : result.contributionMarginPct != null &&
+                          result.contributionMarginPct < 35
+                        ? "warning"
+                        : "success"
                 }
               />
 
@@ -759,36 +638,6 @@ ${SITE_URL}`;
                       : "neutral"
                 }
               />
-
-              <div className="rounded-xl border border-amber-500/35 bg-amber-950/20 px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">
-                      Profit plan
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold text-white">
-                      Most founders stop here and still scale wrong
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-300">
-                      Want a realistic plan to hit your target monthly profit?
-                      Get deeper pricing, profit, and scenario guidance with
-                      free early access.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:items-end">
-                    <button
-                      onClick={() => openWaitlist("profit_plan_cta")}
-                      className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
-                    >
-                      Get My Profit Plan
-                    </button>
-                    <p className="text-xs text-slate-400">
-                      Free early access. Limited spots.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -899,43 +748,6 @@ ${SITE_URL}`;
               />
             </div>
           </div>
-        </section>
-
-        <section className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 to-slate-900/60 p-6 text-center">
-          <h3 className="text-lg font-semibold text-emerald-300">
-            🚀 {proCta.title}
-          </h3>
-
-          <p className="mt-2 text-sm text-slate-300">{proCta.body}</p>
-
-          <p className="mt-3 text-sm font-medium text-emerald-300">
-            👉 Most founders don’t realize this until it’s too late.
-          </p>
-
-          <p className="mt-4 text-sm text-slate-300">
-            The Pro version includes:
-            <br />
-            • 12-month profit projection
-            <br />
-            • Scenario comparison (3 pricing models)
-            <br />
-            • Churn impact calculator
-            <br />
-            • Founder salary planning
-            <br />
-            • Runway analysis
-          </p>
-
-          <button
-            onClick={() => openWaitlist("bottom")}
-            className="mt-4 rounded-lg bg-emerald-500 px-6 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400"
-          >
-            {proCta.button}
-          </button>
-
-          <p className="mt-2 text-xs text-slate-400">
-            Be the first to access advanced pricing insights and profit tools.
-          </p>
         </section>
 
         <section className="space-y-3 rounded-2xl border border-slate-800/80 bg-slate-900/40 px-4 py-3 text-xs text-slate-200 sm:px-5 sm:py-4">
