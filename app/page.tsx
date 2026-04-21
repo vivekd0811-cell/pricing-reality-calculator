@@ -185,11 +185,11 @@ export default function Home() {
       case "healthy":
       default:
         return {
-          title: "This looks good on paper — but most founders still fail at this stage.",
-          body: "You are not factoring client churn, growth pressure, and your actual take-home income. That’s where most pricing models break.",
-          shortLabel: "Healthy pricing, but incomplete",
+          title: "This looks profitable — but it’s probably lying to you.",
+          body: "A quick calculator can make your model look healthier than it really is. The moment churn rises, growth slows, or founder income gets added, the economics can change fast.",
+          shortLabel: "Looks profitable, but fragile underneath",
           shortTakeaway:
-            "A healthy-looking model can still break once churn, growth, and founder income are added.",
+            "A profitable-looking model can still break when real-world pressure hits.",
           border: "border-emerald-500/40",
           bg: "bg-emerald-950/20",
           eyebrow: "text-emerald-300",
@@ -524,26 +524,33 @@ export default function Home() {
                 </p>
 
                 <p className="mt-3 text-lg font-semibold leading-snug text-white sm:text-xl">
-                  This looks good on paper — but most founders still fail at
-                  this stage.
+                  This looks profitable — but it&apos;s probably lying to you.
                 </p>
 
                 <p className="mt-4 text-sm leading-6 text-slate-300">
-                  You are not factoring:
-                  <br />• client churn
-                  <br />• growth pressure
-                  <br />• your actual take-home income
+                  If you follow this model as-is, you will:
+                  <br />• underestimate how many clients you actually need
+                  <br />• overestimate how much money you’ll take home
+                  <br />• hit a wall when growth slows or churn kicks in
                   <br />
                   <br />
-                  That&apos;s where most pricing models break.
+                  Most founders don&apos;t fail because of effort.
+                  <br />
+                  They fail because their numbers were wrong from day one.
                 </p>
 
                 <h3 className="mt-5 text-2xl font-semibold leading-snug text-white sm:text-3xl">
-                  Get Your Real Profit Plan
+                  Fix Your Pricing Before It Breaks Your Business
                 </h3>
 
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  Based on your numbers. Takes 30 seconds.
+                  Get a real plan based on:
+                  <br />• your current pricing
+                  <br />• your actual cost structure
+                  <br />• your target income
+                  <br />
+                  <br />
+                  Takes 30 seconds.
                 </p>
 
                 <div className="mt-5 flex flex-col items-start gap-3 sm:items-center">
