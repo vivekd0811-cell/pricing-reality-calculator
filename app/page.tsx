@@ -65,13 +65,6 @@ export default function Home() {
   const targetProfitValue = parseNumber(targetProfit);
   const currentClientsValue = parseNumber(currentClients);
 
-  const targetProfitDisplay = useMemo(() => {
-    if (targetProfitValue == null || targetProfitValue <= 0) {
-      return currency === "INR" ? "₹1L" : "$1K";
-    }
-    return `${formatMoney(targetProfitValue)}/month profit`;
-  }, [targetProfitValue, currency]);
-
   const incomeReality = useMemo(() => {
     if (
       !result.isValid ||
@@ -192,11 +185,11 @@ export default function Home() {
       case "healthy":
       default:
         return {
-          title: "You have a viable pricing model.",
-          body: "Your economics look healthy at a quick glance. Now the goal is to protect and improve that margin as you grow.",
-          shortLabel: "Healthy pricing",
+          title: "This looks good on paper — but most founders still fail at this stage.",
+          body: "You are not factoring client churn, growth pressure, and your actual take-home income. That’s where most pricing models break.",
+          shortLabel: "Healthy pricing, but incomplete",
           shortTakeaway:
-            "Your pricing has enough room to support a real business.",
+            "A healthy-looking model can still break once churn, growth, and founder income are added.",
           border: "border-emerald-500/40",
           bg: "bg-emerald-950/20",
           eyebrow: "text-emerald-300",
@@ -531,34 +524,38 @@ export default function Home() {
                 </p>
 
                 <p className="mt-3 text-lg font-semibold leading-snug text-white sm:text-xl">
-                  Most founders think they&apos;re profitable — until they run
-                  this.
+                  This looks good on paper — but most founders still fail at
+                  this stage.
                 </p>
-
-                <h3 className="mt-4 text-2xl font-semibold leading-snug text-white sm:text-3xl">
-                  See Exactly How to Reach {targetProfitDisplay}
-                </h3>
 
                 <p className="mt-4 text-sm leading-6 text-slate-300">
-                  Get your personalized plan based on your numbers:
+                  You are not factoring:
+                  <br />• client churn
+                  <br />• growth pressure
+                  <br />• your actual take-home income
+                  <br />
+                  <br />
+                  That&apos;s where most pricing models break.
                 </p>
 
-                <div className="mt-3 space-y-1 text-sm text-slate-200">
-                  <p>• How many clients you actually need</p>
-                  <p>• The exact price you should charge</p>
-                  <p>• Where your pricing is leaking profit</p>
-                </div>
+                <h3 className="mt-5 text-2xl font-semibold leading-snug text-white sm:text-3xl">
+                  Get Your Real Profit Plan
+                </h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  Based on your numbers. Takes 30 seconds.
+                </p>
 
                 <div className="mt-5 flex flex-col items-start gap-3 sm:items-center">
                   <button
                     onClick={() => openProfitPlan("results_primary")}
                     className="w-full rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 sm:w-auto sm:min-w-[280px]"
                   >
-                    Send Me My Profit Plan
+                    Get My Real Profit Plan
                   </button>
 
                   <p className="text-xs text-slate-400">
-                    Takes 30 seconds. Free. No spam.
+                    No spam. Built from your inputs.
                   </p>
                 </div>
               </div>
