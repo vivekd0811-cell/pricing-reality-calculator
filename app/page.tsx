@@ -8,7 +8,7 @@ import { formatNumber, parseNumber } from "@/lib/format";
 
 type CurrencyCode = "USD" | "EUR" | "GBP" | "INR";
 type PricingState = "losing" | "unsustainable" | "fragile" | "healthy";
-type ProfitPlanPlacement = "results_primary";
+type ProfitPlanPlacement = "top_cta" | "mid_cta" | "results_primary";
 
 const CURRENCY_OPTIONS: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD ($) — US Dollar" },
@@ -91,6 +91,7 @@ export default function Home() {
     const requiredClients = Math.ceil(
       (fc + targetProfitValue) / contributionPerClient,
     );
+
     const requiredRevenue = requiredClients * price;
 
     let requiredPriceAtCurrentClients: number | null = null;
@@ -476,6 +477,32 @@ export default function Home() {
                 <p className="mt-2 text-sm text-slate-300">
                   {realityCheckContent.body}
                 </p>
+
+                <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-900/10 p-4">
+                  <p className="text-sm font-medium text-amber-200">
+                    If you&apos;re charging{" "}
+                    <span className="font-semibold text-white">
+                      {formatMoney(parsedInput.pricePerClient ?? 0)}
+                    </span>{" "}
+                    right now, this model is likely overstating your
+                    profitability.
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    Most founders only realize this after months of lost income.
+                  </p>
+
+                  <button
+                    onClick={() => openProfitPlan("top_cta")}
+                    className="mt-4 w-full rounded-lg bg-emerald-500 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                  >
+                    Fix My Pricing Now
+                  </button>
+
+                  <p className="mt-2 text-center text-xs text-slate-400">
+                    Takes 30 seconds. No signup.
+                  </p>
+                </div>
               </div>
 
               <div className="rounded-xl border border-slate-700/80 bg-slate-900/70 px-4 py-4">
@@ -516,6 +543,19 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
+
+                <div className="mt-6 rounded-lg border border-emerald-500/20 bg-emerald-900/10 p-4">
+                  <p className="text-sm text-emerald-200">
+                    This is where most founders make wrong decisions.
+                  </p>
+
+                  <button
+                    onClick={() => openProfitPlan("mid_cta")}
+                    className="mt-3 w-full rounded-lg bg-emerald-500 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                  >
+                    Show Me My Real Numbers
+                  </button>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-950/30 to-slate-900/60 px-5 py-5 shadow-[0_0_0_1px_rgba(245,158,11,0.18)]">
@@ -530,7 +570,7 @@ export default function Home() {
                 <p className="mt-4 text-sm leading-6 text-slate-300">
                   If you follow this model as-is, you will:
                   <br />• underestimate how many clients you actually need
-                  <br />• overestimate how much money you’ll take home
+                  <br />• overestimate how much money you&apos;ll take home
                   <br />• hit a wall when growth slows or churn kicks in
                   <br />
                   <br />
@@ -558,11 +598,12 @@ export default function Home() {
                     onClick={() => openProfitPlan("results_primary")}
                     className="w-full rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 sm:w-auto sm:min-w-[280px]"
                   >
-                    Get My Real Profit Plan
+                    Fix My Pricing Before I Lose Money
                   </button>
 
                   <p className="text-xs text-slate-400">
-                    No spam. Built from your inputs.
+                    See exactly how many clients, pricing, and revenue you
+                    actually need.
                   </p>
                 </div>
               </div>
