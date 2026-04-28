@@ -95,6 +95,7 @@ export default function Home() {
     const requiredRevenue = requiredClients * price;
 
     let requiredPriceAtCurrentClients: number | null = null;
+
     if (currentClientsValue != null && currentClientsValue > 0) {
       requiredPriceAtCurrentClients =
         (fc + targetProfitValue) / currentClientsValue + vc;
@@ -160,6 +161,8 @@ export default function Home() {
           border: "border-rose-500/40",
           bg: "bg-rose-950/20",
           eyebrow: "text-rose-300",
+          ctaWarning:
+            "You are not underpriced — you are structurally losing money.",
         };
       case "unsustainable":
         return {
@@ -171,6 +174,8 @@ export default function Home() {
           border: "border-amber-500/40",
           bg: "bg-amber-950/20",
           eyebrow: "text-amber-300",
+          ctaWarning:
+            "Your margins are too thin — growth will make this harder, not easier.",
         };
       case "fragile":
         return {
@@ -182,6 +187,8 @@ export default function Home() {
           border: "border-yellow-500/40",
           bg: "bg-yellow-950/20",
           eyebrow: "text-yellow-300",
+          ctaWarning:
+            "Your model works only if everything goes right — that is risky.",
         };
       case "healthy":
       default:
@@ -194,9 +201,46 @@ export default function Home() {
           border: "border-emerald-500/40",
           bg: "bg-emerald-950/20",
           eyebrow: "text-emerald-300",
+          ctaWarning:
+            "This looks healthy now — but it may be overstating your real take-home profit.",
         };
     }
   }, [pricingState]);
+
+  const dynamicTrigger = useMemo(() => {
+    if (
+      result.contributionPerClient != null &&
+      result.contributionPerClient <= 0
+    ) {
+      return "Every new client currently makes the business worse. Fix this before spending more on growth.";
+    }
+
+    if (
+      result.contributionMarginPct != null &&
+      result.contributionMarginPct < 40
+    ) {
+      return "Your margin is thin. A few discounts, late payments, or delivery overruns can wipe out your profit.";
+    }
+
+    if (result.breakEvenClients != null && result.breakEvenClients > 10) {
+      return `You need ${formatNumber(
+        result.breakEvenClients,
+      )} clients just to break even. That is a lot of operational pressure.`;
+    }
+
+    if (incomeReality.requiredClients != null && incomeReality.requiredClients > 10) {
+      return `To hit your target profit, you may need ${formatNumber(
+        incomeReality.requiredClients,
+      )} clients. Most founders underestimate how hard that is.`;
+    }
+
+    return "Your numbers look good at first glance, but churn, growth pressure, and founder income can change the picture fast.";
+  }, [
+    result.contributionPerClient,
+    result.contributionMarginPct,
+    result.breakEvenClients,
+    incomeReality.requiredClients,
+  ]);
 
   const profitPlanUrlWithContext = useMemo(() => {
     const params = new URLSearchParams({
@@ -315,6 +359,7 @@ export default function Home() {
     if (lastTrackedResultKey.current === key) return;
 
     lastTrackedResultKey.current = key;
+
     trackEvent("calculator_result_viewed", {
       target_profit: targetProfitValue,
       current_clients: currentClientsValue,
@@ -359,9 +404,11 @@ export default function Home() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/80">
               Pricing reality check
             </p>
+
             <h1 className="text-2xl font-semibold leading-snug sm:text-3xl">
               Break-even &amp; Pricing Reality Calculator
             </h1>
+
             <p className="max-w-2xl text-sm text-slate-300/90">
               A brutally simple calculator for service and retainer businesses.
               Plug in your pricing and costs to see whether your model can
@@ -375,6 +422,7 @@ export default function Home() {
                 <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-200/80">
                   Currency
                 </label>
+
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
@@ -484,23 +532,22 @@ export default function Home() {
                     <span className="font-semibold text-white">
                       {formatMoney(parsedInput.pricePerClient ?? 0)}
                     </span>{" "}
-                    right now, this model is likely overstating your
-                    profitability.
+                    right now, this model may be overstating your real profit.
                   </p>
 
                   <p className="mt-2 text-xs text-slate-400">
-                    Most founders only realize this after months of lost income.
+                    {dynamicTrigger}
                   </p>
 
                   <button
                     onClick={() => openProfitPlan("top_cta")}
                     className="mt-4 w-full rounded-lg bg-emerald-500 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
                   >
-                    Fix My Pricing Now
+                    Get My Real Profit Plan
                   </button>
 
                   <p className="mt-2 text-center text-xs text-slate-400">
-                    Takes 30 seconds. No signup.
+                    Takes 30 seconds. Most founders never do this.
                   </p>
                 </div>
               </div>
@@ -510,6 +557,7 @@ export default function Home() {
                   <h3 className="text-base font-semibold text-white">
                     {realityCheckContent.shortLabel}
                   </h3>
+
                   <p className="mt-1 text-sm text-slate-300">
                     {realityCheckContent.shortTakeaway}
                   </p>
@@ -549,11 +597,16 @@ export default function Home() {
                     This is where most founders make wrong decisions.
                   </p>
 
+                  <p className="mt-1 text-xs text-slate-400">
+                    Do not stop at break-even. Check what it really takes to hit
+                    your income target.
+                  </p>
+
                   <button
                     onClick={() => openProfitPlan("mid_cta")}
                     className="mt-3 w-full rounded-lg bg-emerald-500 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
                   >
-                    Show Me My Real Numbers
+                    Get My Real Profit Plan
                   </button>
                 </div>
               </div>
@@ -598,7 +651,7 @@ export default function Home() {
                     onClick={() => openProfitPlan("results_primary")}
                     className="w-full rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 sm:w-auto sm:min-w-[280px]"
                   >
-                    Fix My Pricing Before I Lose Money
+                    Get My Real Profit Plan
                   </button>
 
                   <p className="text-xs text-slate-400">
@@ -700,6 +753,7 @@ export default function Home() {
               <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-300">
                 Income Reality Mode
               </h2>
+
               <p className="max-w-2xl text-[13px] text-emerald-100/90">
                 Instead of just breaking even, how many clients and what pricing
                 do you need to hit a target monthly profit?
@@ -741,7 +795,7 @@ export default function Home() {
                       ? "Not reachable with current pricing"
                       : "—"
                 }
-                subtitle="How many clients you need (at this price and cost structure) to hit your profit goal."
+                subtitle="How many clients you need at this price and cost structure to hit your profit goal."
                 tone={
                   !result.isValid
                     ? "neutral"
@@ -788,7 +842,7 @@ export default function Home() {
                 subtitle={
                   currentClientsValue == null || currentClientsValue === 0
                     ? "Set current clients above 0 to compute required price."
-                    : "What you would need to charge each client (at your chosen client count) to hit this profit target."
+                    : "What you would need to charge each client at your chosen client count to hit this profit target."
                 }
                 tone={
                   !result.isValid
@@ -806,6 +860,7 @@ export default function Home() {
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
             3 · Reality check notes
           </h2>
+
           {result.errors.length > 0 ? (
             <ul className="list-disc space-y-1 pl-4 text-[13px] text-red-300">
               {result.errors.map((error) => (
@@ -827,6 +882,7 @@ export default function Home() {
                   a replacement.
                 </p>
               )}
+
               <p className="text-[11px] text-slate-400">
                 Assumptions: all inputs are monthly; churn, collection delays,
                 sales capacity, and taxes are ignored. Always layer this on top
