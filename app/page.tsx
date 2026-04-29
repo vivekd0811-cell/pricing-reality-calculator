@@ -161,8 +161,6 @@ export default function Home() {
           border: "border-rose-500/40",
           bg: "bg-rose-950/20",
           eyebrow: "text-rose-300",
-          ctaWarning:
-            "You are not underpriced — you are structurally losing money.",
         };
       case "unsustainable":
         return {
@@ -174,8 +172,6 @@ export default function Home() {
           border: "border-amber-500/40",
           bg: "bg-amber-950/20",
           eyebrow: "text-amber-300",
-          ctaWarning:
-            "Your margins are too thin — growth will make this harder, not easier.",
         };
       case "fragile":
         return {
@@ -187,8 +183,6 @@ export default function Home() {
           border: "border-yellow-500/40",
           bg: "bg-yellow-950/20",
           eyebrow: "text-yellow-300",
-          ctaWarning:
-            "Your model works only if everything goes right — that is risky.",
         };
       case "healthy":
       default:
@@ -201,8 +195,6 @@ export default function Home() {
           border: "border-emerald-500/40",
           bg: "bg-emerald-950/20",
           eyebrow: "text-emerald-300",
-          ctaWarning:
-            "This looks healthy now — but it may be overstating your real take-home profit.",
         };
     }
   }, [pricingState]);
@@ -222,19 +214,19 @@ export default function Home() {
       return "Your margin is thin. A few discounts, late payments, or delivery overruns can wipe out your profit.";
     }
 
+    if (incomeReality.requiredClients != null && incomeReality.requiredClients > 10) {
+      return `To hit your target, you may need ${formatNumber(
+        incomeReality.requiredClients,
+      )} clients. Most founders underestimate how hard that is.`;
+    }
+
     if (result.breakEvenClients != null && result.breakEvenClients > 10) {
       return `You need ${formatNumber(
         result.breakEvenClients,
       )} clients just to break even. That is a lot of operational pressure.`;
     }
 
-    if (incomeReality.requiredClients != null && incomeReality.requiredClients > 10) {
-      return `To hit your target profit, you may need ${formatNumber(
-        incomeReality.requiredClients,
-      )} clients. Most founders underestimate how hard that is.`;
-    }
-
-    return "Your numbers look good at first glance, but churn, growth pressure, and founder income can change the picture fast.";
+    return "Most founders think this is enough — until cash flow problems start.";
   }, [
     result.contributionPerClient,
     result.contributionMarginPct,
@@ -547,7 +539,8 @@ export default function Home() {
                   </button>
 
                   <p className="mt-2 text-center text-xs text-slate-400">
-                    Takes 30 seconds. Most founders never do this.
+                    Takes 30 seconds. Most founders discover this after months
+                    of underpricing.
                   </p>
                 </div>
               </div>
@@ -633,7 +626,7 @@ export default function Home() {
                 </p>
 
                 <h3 className="mt-5 text-2xl font-semibold leading-snug text-white sm:text-3xl">
-                  Fix Your Pricing Before It Breaks Your Business
+                  Your Pricing Model Will Break — Fix It Now
                 </h3>
 
                 <p className="mt-3 text-sm leading-6 text-slate-300">
